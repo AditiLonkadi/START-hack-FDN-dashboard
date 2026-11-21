@@ -84,8 +84,19 @@ export function activityFeed(matrix: Matrix, metrics: GameMetric[]) {
     events.push({ gameId: metric.gameId, kind: "completed", text: `Game ${metric.gameId} completed: FDN ${metric.payoff >= 0 ? "+" : ""}${metric.payoff.toFixed(2)} net.` });
     if (!index) return;
     const previous = metrics[index - 1];
-    if (metric.rank < (previous.rank ?? metric.rank)) events.push({ gameId: metric.gameId, kind: "rank-up", text: `FDN gained ${previous.rank! - metric.rank!} place${previous.rank! - metric.rank! === 1 ? "" : "s"} to #${metric.rank}.` });
-    if (metric.rank > (previous.rank ?? metric.rank)) events.push({ gameId: metric.gameId, kind: "rank-down", text: `FDN moved down ${metric.rank! - previous.rank!} place${metric.rank! - previous.rank! === 1 ? "" : "s"} to #${metric.rank}.` });
+    const previousRank = previous.rank;
+    const currentRank = metric.rank;
+    // Rankings may be unavailable for a partial response. Do not infer movement
+    // unless both consecutive rounds explicitly contain a numeric rank.
+    if (previousRank === null || currentRank === null) return;
+    if (currentRank < previousRank) {
+      const gained = previousRank - currentRank;
+      events.push({ gameId: metric.gameId, kind: "rank-up", text: `FDN gained ${gained} place${gained === 1 ? "" : "s"} to #${currentRank}.` });
+    }
+    if (currentRank > previousRank) {
+      const lost = currentRank - previousRank;
+      events.push({ gameId: metric.gameId, kind: "rank-down", text: `FDN moved down ${lost} place${lost === 1 ? "" : "s"} to #${currentRank}.` });
+    }
   });
   return events.slice(-8).reverse();
 }
