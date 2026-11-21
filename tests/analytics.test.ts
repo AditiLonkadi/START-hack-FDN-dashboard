@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { activityFeed, buildLeaderboard, fdnGaps, projection, requiredAverageForRank, teamProgression } from "../lib/dashboard/analytics";
 import { buildTeamMetrics } from "../lib/dashboard/metrics";
-import { matrixSchema, type Matrix } from "../lib/quantco/types";
+import { gamesSchema, matrixSchema, type Matrix } from "../lib/quantco/types";
 import { onlyCompletedGames } from "../lib/dashboard/data";
 import type { GameMetric } from "../lib/dashboard/metrics";
 
@@ -25,4 +25,13 @@ test("does not invent movement when a consecutive rank is unavailable", () => {
   assert.equal(rankEvents([{ gameId: 1, payoff: 1, cumulativePayoff: 1, rank: 2 }, { gameId: 2, payoff: 1, cumulativePayoff: 2, rank: null }]).length, 0);
   assert.equal(rankEvents([{ gameId: 1, payoff: 1, cumulativePayoff: 1, rank: null }, { gameId: 2, payoff: 1, cumulativePayoff: 2, rank: 2 }]).length, 0);
   assert.equal(rankEvents([{ gameId: 1, payoff: 1, cumulativePayoff: 1, rank: null }, { gameId: 2, payoff: 1, cumulativePayoff: 2, rank: null }]).length, 0);
+});
+test("accepts active game status while only completed IDs enter actual matrix data", () => {
+  const games = gamesSchema.parse({ page: 1, page_size: 3, total: 3, total_pages: 1, items: [
+    { id: 1, start_time: "2026-11-21T13:00:00Z", status: "completed" },
+    { id: 2, start_time: "2026-11-21T13:13:20Z", status: "active" },
+    { id: 3, start_time: "2026-11-21T13:26:40Z", status: "scheduled" },
+  ] });
+  const completed = new Set(games.items.filter((game) => game.status === "completed").map((game) => game.id));
+  assert.deepEqual(onlyCompletedGames(matrix, completed).game_ids, [1]);
 });

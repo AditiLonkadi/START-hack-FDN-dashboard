@@ -43,7 +43,7 @@ export const gamesSchema = paginationSchema.extend({
   items: z.array(z.object({
     id: z.number().int().positive(),
     start_time: z.string().datetime(),
-    status: z.enum(["scheduled", "completed"]),
+    status: z.enum(["scheduled", "active", "completed"]),
   })),
 });
 
