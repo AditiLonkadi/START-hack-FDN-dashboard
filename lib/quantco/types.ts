@@ -7,19 +7,21 @@ export const paginationSchema = z.object({
   total_pages: z.number().int().positive(),
 });
 
+const matrixItemSchema = z.object({
+  team_name: z.string().min(1),
+  cells: z.array(z.number().finite()),
+  total: z.number().finite(),
+});
+
 export const matrixSchema = paginationSchema.extend({
   game_ids: z.array(z.number().int().positive()),
-  items: z.array(z.object({
-    team_name: z.string().min(1),
-    cells: z.array(z.number().finite()),
-    total: z.number().finite(),
-  })).superRefine((row, ctx) => {
-    row.items.forEach((item, index) => {
-      if (item.cells.length !== row.game_ids.length) {
+  items: z.array(matrixItemSchema),
+}).superRefine((response, ctx) => {
+    response.items.forEach((item, index) => {
+      if (item.cells.length !== response.game_ids.length) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["items", index, "cells"], message: "Each score row must match game_ids." });
       }
     });
-  }),
 });
 
 export const performanceSchema = z.object({
