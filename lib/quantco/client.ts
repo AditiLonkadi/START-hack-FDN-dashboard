@@ -14,7 +14,10 @@ async function request<T>(path: string, schema: z.ZodType<T>): Promise<T> {
   let lastError: unknown;
   for (let attempt = 0; attempt <= RETRIES; attempt += 1) {
     try {
-      const response = await fetch(`${BASE_URL}${path}`, { next: { revalidate: dashboardConfig.refreshSeconds }, headers: { Accept: "application/json" } });
+      // A visible dashboard refreshes at most once every 30–60 seconds. Avoid
+      // Next's Data Cache here so a completed-game response is not reused after
+      // the client has explicitly requested a fresh server render.
+      const response = await fetch(`${BASE_URL}${path}`, { cache: "no-store", headers: { Accept: "application/json" } });
       if (!response.ok) throw new QuantcoApiError(`QuantCo API returned ${response.status} for ${path}`, response.status);
       return schema.parse(await response.json());
     } catch (error) {

@@ -1,7 +1,9 @@
 import { PayoffCharts } from "@/components/payoff-charts";
 import { getDashboardData } from "@/lib/dashboard/data";
+import { LiveRefresh } from "@/components/live-refresh";
+import { dashboardConfig } from "@/lib/config";
 
-export const revalidate = 45;
+export const dynamic = "force-dynamic";
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "EUR", maximumFractionDigits: 2 });
 
 export default async function OverviewPage() {
@@ -10,7 +12,7 @@ export default async function OverviewPage() {
     const latest = metrics.at(-1);
     const issuedAcceptance = performance.issued_count ? performance.issued_accepted / performance.issued_count : null;
     const reviewedAcceptance = performance.reviewed_count ? performance.reviewed_accepted / performance.reviewed_count : null;
-    return <main className="mx-auto max-w-7xl px-5 py-10">
+    return <main className="mx-auto max-w-7xl px-5 py-10"><LiveRefresh intervalSeconds={dashboardConfig.refreshSeconds} />
       <p className="text-sm font-medium text-sky-400">FDN / QuantCo Claim to Fame</p><h1 className="mt-1 text-3xl font-bold tracking-tight text-white sm:text-4xl">Performance dashboard</h1>
       <p className="mt-3 max-w-2xl text-slate-400">Official public leaderboard data, collected server-side. Values are shown exactly as reported; unavailable data is never treated as zero.</p>
       <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

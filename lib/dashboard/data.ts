@@ -4,9 +4,22 @@ import { dashboardConfig } from "@/lib/config";
 import { matrixSchema, performanceSchema, type Transaction } from "@/lib/quantco/types";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 
+function onlyCompletedGames(matrix: Awaited<ReturnType<typeof quantco.matrix>>, completedGameIds: Set<number>) {
+  const indexes = matrix.game_ids.map((gameId, index) => ({ gameId, index })).filter(({ gameId }) => completedGameIds.has(gameId));
+  return {
+    ...matrix,
+    game_ids: indexes.map(({ gameId }) => gameId),
+    items: matrix.items.map((team) => {
+      const cells = indexes.map(({ index }) => team.cells[index]);
+      return { ...team, cells, total: cells.reduce((sum, payoff) => sum + payoff, 0) };
+    }),
+  };
+}
+
 export async function getLiveDashboard() {
   const [matrix, performance, games] = await Promise.all([quantco.matrix(), quantco.performance(), quantco.completedGames()]);
-  return { matrix, performance, games, matchup: null, metrics: buildTeamMetrics(matrix, quantco.team), fetchedAt: new Date().toISOString() };
+  const completedMatrix = onlyCompletedGames(matrix, new Set(games.map((game) => game.id)));
+  return { matrix: completedMatrix, performance, games, matchup: null, metrics: buildTeamMetrics(completedMatrix, quantco.team), fetchedAt: new Date().toISOString() };
 }
 
 async function getSupabaseDashboard() {

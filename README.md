@@ -9,7 +9,7 @@ Server-rendered Next.js dashboard for the public QuantCo leaderboard. No tournam
 3. For the deadline MVP, leave `DASHBOARD_DATA_MODE=live`. It needs no Supabase project or secrets.
 4. Run `npm install`, then `npm run dev`.
 
-The dashboard itself fetches public QuantCo data server-side and revalidates every 45 seconds by default (configurable from 30 to 60 seconds). In `live` mode persistence and `/api/ingest` are disabled.
+The dashboard itself fetches public QuantCo data server-side. While a dashboard page is visible, it asks Next.js for fresh server-rendered data every 45 seconds by default (configurable from 30 to 60 seconds). These live-mode requests bypass Next's Data Cache; only games returned by QuantCo as `completed` are displayed as final. In `live` mode persistence and `/api/ingest` are disabled.
 
 ## Optional Supabase persistence
 
