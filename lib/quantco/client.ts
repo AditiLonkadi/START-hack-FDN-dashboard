@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { dashboardConfig } from "@/lib/config";
 import { gamesSchema, matchupSchema, matrixSchema, performanceSchema, transactionsSchema, type Game, type Matchup, type Matrix, type Performance, type Transaction } from "@/lib/quantco/types";
 
 const BASE_URL = "https://c2f.public.quantco.cloud";
@@ -33,8 +32,11 @@ export const quantco = {
   team: TEAM,
   matrix: () => request("/leaderboard/api/matrix?page=1&game_limit=100", matrixSchema),
   performance: () => request(`/leaderboard/api/performance?team=${encodeURIComponent(TEAM)}`, performanceSchema),
+  performanceForTeam: (team: string) => request(`/leaderboard/api/performance?team=${encodeURIComponent(team)}`, performanceSchema),
   completedGames: async (): Promise<Game[]> => (await request("/leaderboard/api/games?completed_only=true&page_size=1000", gamesSchema)).items,
-  matchup: (): Promise<Matchup> => request(`/leaderboard/api/matchup?team=${encodeURIComponent(TEAM)}&page=1&game_limit=20`, matchupSchema),
+  allGames: async (): Promise<Game[]> => (await request("/leaderboard/api/games?page=1&page_size=1000", gamesSchema)).items,
+  matchup: (): Promise<Matchup> => request(`/leaderboard/api/matchup?team=${encodeURIComponent(TEAM)}&page=1&game_limit=100`, matchupSchema),
+  matchupForTeam: (team: string): Promise<Matchup> => request(`/leaderboard/api/matchup?team=${encodeURIComponent(team)}&page=1&game_limit=100`, matchupSchema),
   transactions: async (gameId: number): Promise<Transaction[]> => {
     const first = await request(`/leaderboard/api/transactions?game_id=${gameId}&team=${encodeURIComponent(TEAM)}&page=1`, transactionsSchema);
     const pages = await Promise.all(Array.from({ length: Math.max(0, first.total_pages - 1) }, (_, index) =>

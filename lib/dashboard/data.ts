@@ -17,9 +17,9 @@ function onlyCompletedGames(matrix: Awaited<ReturnType<typeof quantco.matrix>>, 
 }
 
 export async function getLiveDashboard() {
-  const [matrix, performance, games] = await Promise.all([quantco.matrix(), quantco.performance(), quantco.completedGames()]);
+  const [matrix, performance, games, allGames] = await Promise.all([quantco.matrix(), quantco.performance(), quantco.completedGames(), quantco.allGames()]);
   const completedMatrix = onlyCompletedGames(matrix, new Set(games.map((game) => game.id)));
-  return { matrix: completedMatrix, performance, games, matchup: null, metrics: buildTeamMetrics(completedMatrix, quantco.team), fetchedAt: new Date().toISOString() };
+  return { matrix: completedMatrix, performance, games, allGames, matchup: null, metrics: buildTeamMetrics(completedMatrix, quantco.team), fetchedAt: new Date().toISOString() };
 }
 
 async function getSupabaseDashboard() {
@@ -33,7 +33,11 @@ async function getSupabaseDashboard() {
   if (!rawPerformance) throw new Error("The latest persisted snapshot does not include FDN performance data.");
   const matrix = matrixSchema.parse(snapshot.matrix);
   const performance = performanceSchema.parse(rawPerformance);
-  return { matrix, performance, games: [], matchup: null, metrics: buildTeamMetrics(matrix, quantco.team), fetchedAt: snapshot.observed_at };
+  return { matrix, performance, games: [], allGames: [], matchup: null, metrics: buildTeamMetrics(matrix, quantco.team), fetchedAt: snapshot.observed_at };
+}
+
+export async function getTeamPerformances(teamNames: string[]) {
+  return Promise.all(teamNames.map((team) => quantco.performanceForTeam(team)));
 }
 
 export function getDashboardData() {
