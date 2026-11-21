@@ -54,3 +54,46 @@ export function performanceRates(performance: Performance) {
     reviewer: performance.reviewed_count ? performance.reviewed_accepted / performance.reviewed_count : null,
   };
 }
+
+export function teamProgression(matrix: Matrix, teamName: string) {
+  const team = matrix.items.find((item) => item.team_name === teamName);
+  if (!team) return [];
+  return matrix.game_ids.map((gameId, index) => {
+    const scores = matrix.items.map((item) => ({ teamName: item.team_name, payoff: item.cells.slice(0, index + 1).reduce((sum, value) => sum + value, 0) }));
+    const rank = 1 + scores.filter((row) => row.payoff > (scores.find((row) => row.teamName === teamName)?.payoff ?? 0)).length;
+    return { gameId, payoff: team.cells[index], cumulative: scores.find((row) => row.teamName === teamName)?.payoff ?? null, rank };
+  });
+}
+
+export function recentTrend(metrics: GameMetric[], count = 3) {
+  const values = metrics.map((metric) => metric.payoff);
+  if (!values.length) return null;
+  const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+  const recent = values.slice(-Math.min(count, values.length));
+  const recentMean = recent.reduce((sum, value) => sum + value, 0) / recent.length;
+  return { historicalMean: mean, recentMean, difference: recentMean - mean, period: recent.length };
+}
+
+export type ActivityEvent = { gameId: number; kind: "completed" | "rank-up" | "rank-down" | "overtook" | "overtaken" | "payoff"; text: string };
+
+export function activityFeed(matrix: Matrix, metrics: GameMetric[]) {
+  const events: ActivityEvent[] = [];
+  const fdn = matrix.items.find((team) => team.team_name === "FDN");
+  if (!fdn) return events;
+  metrics.forEach((metric, index) => {
+    events.push({ gameId: metric.gameId, kind: "completed", text: `Game ${metric.gameId} completed: FDN ${metric.payoff >= 0 ? "+" : ""}${metric.payoff.toFixed(2)} net.` });
+    if (!index) return;
+    const previous = metrics[index - 1];
+    if (metric.rank < (previous.rank ?? metric.rank)) events.push({ gameId: metric.gameId, kind: "rank-up", text: `FDN gained ${previous.rank! - metric.rank!} place${previous.rank! - metric.rank! === 1 ? "" : "s"} to #${metric.rank}.` });
+    if (metric.rank > (previous.rank ?? metric.rank)) events.push({ gameId: metric.gameId, kind: "rank-down", text: `FDN moved down ${metric.rank! - previous.rank!} place${metric.rank! - previous.rank! === 1 ? "" : "s"} to #${metric.rank}.` });
+  });
+  return events.slice(-8).reverse();
+}
+
+export function streak(values: number[]) {
+  if (!values.length) return null;
+  const positive = values.at(-1)! >= 0;
+  let length = 0;
+  for (let index = values.length - 1; index >= 0 && (values[index] >= 0) === positive; index -= 1) length += 1;
+  return { positive, length };
+}

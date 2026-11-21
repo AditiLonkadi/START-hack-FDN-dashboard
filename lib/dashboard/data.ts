@@ -4,7 +4,7 @@ import { dashboardConfig } from "@/lib/config";
 import { matrixSchema, performanceSchema, type Transaction } from "@/lib/quantco/types";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 
-function onlyCompletedGames(matrix: Awaited<ReturnType<typeof quantco.matrix>>, completedGameIds: Set<number>) {
+export function onlyCompletedGames(matrix: Awaited<ReturnType<typeof quantco.matrix>>, completedGameIds: Set<number>) {
   const indexes = matrix.game_ids.map((gameId, index) => ({ gameId, index })).filter(({ gameId }) => completedGameIds.has(gameId));
   return {
     ...matrix,
